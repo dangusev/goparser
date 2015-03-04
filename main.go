@@ -3,10 +3,12 @@ package main
 import (
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/blasyrkh123/goparser/models"
 	"github.com/moovweb/gokogiri"
@@ -24,25 +26,28 @@ func makeRequest(url string) []byte {
 	return body
 }
 
-func getData(url string, session *mgo.Session) {
+func getData(url string, session *mgo.Session) []models.Item {
 
 	root, _ := gokogiri.ParseHtml(makeRequest(url))
 	defer root.Free()
 	defer session.Close()
 
 	data, _ := root.Search("//div[contains(@class,\"item\")][@data-type=\"1\"]/div[@class=\"description\"]")
-	for _, item := range data {
+
+	items := make([]models.Item, len(data))
+	for i, item := range data {
 		header, _ := item.Search(item.Path() + "/h3[@class=\"title\"]/a")
 		item := models.Item{
 			Title: strings.Trim(strings.TrimSpace(header[0].Content()), "\n"),
 			Url:   header[0].Attribute("href").Content(),
 		}
-
-		_, err := session.DB("goparser").C("items").Upsert(bson.M{"url": item.Url}, &models.Item{Url: item.Url, Title: item.Title})
-		if err != nil {
-			log.Fatal(err)
-		}
+		items[i] = item
 	}
+	return items
+}
+
+func buildUrl(u string, page int64) u string{
+
 }
 
 func getPagesCount(pageURL string) (count int64) {
@@ -63,6 +68,8 @@ func getPagesCount(pageURL string) (count int64) {
 
 func main() {
 	var results []models.Query
+	var parsedItems models.Item
+	u := "https://www.avito.ru/sankt-peterburg/zapchasti_i_aksessuary/zapchasti/dlya_avtomobiley?i=1&q=3"
 	session, err := mgo.Dial("localhost:27017")
 	if err != nil {
 		log.Fatal(err)
@@ -72,7 +79,25 @@ func main() {
 
 	queries.Find(bson.M{}).All(&results)
 	// for _, query := range results {
-	print(getPagesCount("https://www.avito.ru/sankt-peterburg/zapchasti_i_aksessuary/zapchasti/dlya_avtomobiley?i=1&q=3"))
+
+	pagesCount := getPagesCount(u)
+	loopCount := int(math.Ceil(float64(pagesCount) / 10))
+	for i := 0; i <= loopCount; i++ {
+		completed := make(chan int, 10)
+		for k := 1; k < 10; k++ {
+
+			go func() {
+				time.Sleep(50 * time.Millisecond)
+				getData(u, session, page)
+				completed <- 1
+			}()
+		}
+		// select {
+		// case done := <-completed:
+		// print(done)
+		// }
+
+	}
 	// TODO: think about goroutines
 	// getData("https://www.avito.ru/sankt-peterburg/zapchasti_i_aksessuary/zapchasti/dlya_avtomobiley?i=1&q=3", session.Clone())
 	// }
@@ -81,6 +106,7 @@ func main() {
 
 //TODO:
 // Переход по страницам, парсинг нескольких страниц одновременно (таймаут 0.1, 10 за раз)
+// URL BUILDING
 // Запись результатов поиска в БД
 // Работа с запросами (CRUD)
 // Уведомления
