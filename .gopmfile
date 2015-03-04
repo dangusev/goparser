@@ -1,0 +1,8 @@
+[deps]
+github.com/blasyrkh123/goparser = 
+github.com/moovweb/gokogiri = 
+gopkg.in/mgo.v2 = 
+
+[res]
+include = 
+

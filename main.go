@@ -3,12 +3,10 @@ package main
 import (
 	"io/ioutil"
 	"log"
-	"math"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/blasyrkh123/goparser/models"
 	"github.com/moovweb/gokogiri"
@@ -26,11 +24,10 @@ func makeRequest(url string) []byte {
 	return body
 }
 
-func getData(url string, session *mgo.Session) []models.Item {
+func getData(url string) []models.Item {
 
 	root, _ := gokogiri.ParseHtml(makeRequest(url))
 	defer root.Free()
-	defer session.Close()
 
 	data, _ := root.Search("//div[contains(@class,\"item\")][@data-type=\"1\"]/div[@class=\"description\"]")
 
@@ -46,8 +43,8 @@ func getData(url string, session *mgo.Session) []models.Item {
 	return items
 }
 
-func buildUrl(u string, page int64) u string{
-
+func buildUrl(u string, page int64) string {
+	return ""
 }
 
 func getPagesCount(pageURL string) (count int64) {
@@ -68,7 +65,7 @@ func getPagesCount(pageURL string) (count int64) {
 
 func main() {
 	var results []models.Query
-	var parsedItems models.Item
+	var parsedItems []models.Item
 	u := "https://www.avito.ru/sankt-peterburg/zapchasti_i_aksessuary/zapchasti/dlya_avtomobiley?i=1&q=3"
 	session, err := mgo.Dial("localhost:27017")
 	if err != nil {
@@ -80,24 +77,24 @@ func main() {
 	queries.Find(bson.M{}).All(&results)
 	// for _, query := range results {
 
-	pagesCount := getPagesCount(u)
-	loopCount := int(math.Ceil(float64(pagesCount) / 10))
-	for i := 0; i <= loopCount; i++ {
-		completed := make(chan int, 10)
-		for k := 1; k < 10; k++ {
+	// pagesCount := getPagesCount(u)
+	// loopCount := int(math.Ceil(float64(pagesCount) / 10))
+	// for i := 0; i <= loopCount; i++ {
+	// 	completed := make(chan int, 10)
+	// 	for k := 1; k < 10; k++ {
 
-			go func() {
-				time.Sleep(50 * time.Millisecond)
-				getData(u, session, page)
-				completed <- 1
-			}()
-		}
-		// select {
-		// case done := <-completed:
-		// print(done)
-		// }
+	// 		go func() {
+	// 			time.Sleep(50 * time.Millisecond)
+	parsedItems = append(parsedItems, getData(u)...)
+	// completed <- 1
+	// }()
+	// }
+	// select {
+	// case done := <-completed:
+	// print(done)
+	// }
 
-	}
+	// }
 	// TODO: think about goroutines
 	// getData("https://www.avito.ru/sankt-peterburg/zapchasti_i_aksessuary/zapchasti/dlya_avtomobiley?i=1&q=3", session.Clone())
 	// }
