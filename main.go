@@ -3,10 +3,12 @@ package main
 import (
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/blasyrkh123/goparser/models"
 	"github.com/moovweb/gokogiri"
@@ -44,7 +46,11 @@ func getData(url string) []models.Item {
 }
 
 func buildUrl(u string, page int64) string {
-	return ""
+	parsed, _ := url.Parse(u)
+	q := parsed.Query()
+	q.Set("p", strconv.FormatInt(page, 10))
+	parsed.RawQuery = q.Encode()
+	return parsed.String()
 }
 
 func getPagesCount(pageURL string) (count int64) {
@@ -63,10 +69,17 @@ func getPagesCount(pageURL string) (count int64) {
 	return
 }
 
+func getLoopMap(pagesCount int64, perPage int) map[int]int {
+	// Map with [loopNumber]startPage
+	m := make(map[int]int)
+	loopCount := int(math.Ceil(float64(pagesCount) / 10))
+	return m
+}
+
 func main() {
 	var results []models.Query
 	var parsedItems []models.Item
-	u := "https://www.avito.ru/sankt-peterburg/zapchasti_i_aksessuary/zapchasti/dlya_avtomobiley?i=1&q=3"
+
 	session, err := mgo.Dial("localhost:27017")
 	if err != nil {
 		log.Fatal(err)
@@ -75,34 +88,31 @@ func main() {
 	queries := session.DB("goparser").C("queries")
 
 	queries.Find(bson.M{}).All(&results)
-	// for _, query := range results {
 
-	// pagesCount := getPagesCount(u)
-	// loopCount := int(math.Ceil(float64(pagesCount) / 10))
-	// for i := 0; i <= loopCount; i++ {
-	// 	completed := make(chan int, 10)
-	// 	for k := 1; k < 10; k++ {
+	// Iterate over queries in DB
+	for _, query := range results {
+		// Divide pages on groups of 10 and make requests for each page
+		pagesCount := getPagesCount(query.Url)
 
-	// 		go func() {
-	// 			time.Sleep(50 * time.Millisecond)
-	parsedItems = append(parsedItems, getData(u)...)
-	// completed <- 1
-	// }()
-	// }
-	// select {
-	// case done := <-completed:
-	// print(done)
-	// }
+		for i := 1; i <= loopCount; i++ {
+			var wg sync.WaitGroup
+			wg.Add(10)
+			for k := 0; k < 10; k++ {
+				go func() {
+					defer wg.Done()
+					parsedItems = append(parsedItems, getData(query.Url)...)
+				}()
+			}
+			wg.Wait()
 
-	// }
-	// TODO: think about goroutines
-	// getData("https://www.avito.ru/sankt-peterburg/zapchasti_i_aksessuary/zapchasti/dlya_avtomobiley?i=1&q=3", session.Clone())
-	// }
+		}
+	}
 
 }
 
+// u := "https://www.avito.ru/sankt-peterburg/zapchasti_i_aksessuary/zapchasti/dlya_avtomobiley?i=1&q=3"
 //TODO:
-// Переход по страницам, парсинг нескольких страниц одновременно (таймаут 0.1, 10 за раз)
+// <DONE> Переход по страницам, парсинг нескольких страниц одновременно (таймаут 0.1, 10 за раз)
 // URL BUILDING
 // Запись результатов поиска в БД
 // Работа с запросами (CRUD)
