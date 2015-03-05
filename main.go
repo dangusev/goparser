@@ -45,7 +45,7 @@ func getData(url string) []models.Item {
 	return items
 }
 
-func buildUrl(u string, page int64) string {
+func buildURL(u string, page int64) string {
 	parsed, _ := url.Parse(u)
 	q := parsed.Query()
 	q.Set("p", strconv.FormatInt(page, 10))
@@ -69,13 +69,6 @@ func getPagesCount(pageURL string) (count int64) {
 	return
 }
 
-func getLoopMap(pagesCount int64, perPage int) map[int]int {
-	// Map with [loopNumber]startPage
-	m := make(map[int]int)
-	loopCount := int(math.Ceil(float64(pagesCount) / 10))
-	return m
-}
-
 func main() {
 	var results []models.Query
 	var parsedItems []models.Item
@@ -93,11 +86,16 @@ func main() {
 	for _, query := range results {
 		// Divide pages on groups of 10 and make requests for each page
 		pagesCount := getPagesCount(query.Url)
+		loopCount := int(math.Ceil(float64(pagesCount) / 10))
 
 		for i := 1; i <= loopCount; i++ {
 			var wg sync.WaitGroup
-			wg.Add(10)
-			for k := 0; k < 10; k++ {
+			if i == loopCount {
+				pagesPerLoop = int(math.Dim(float64(pagesCount), 10))
+			}
+
+			wg.Add(pagesPerLoop)
+			for k := 0; k < pagesPerLoop; k++ {
 				go func() {
 					defer wg.Done()
 					parsedItems = append(parsedItems, getData(query.Url)...)
@@ -117,4 +115,6 @@ func main() {
 // Запись результатов поиска в БД
 // Работа с запросами (CRUD)
 // Уведомления
+// Логирование
 // "https://www.avito.ru/sankt-peterburg/zapchasti_i_aksessuary/zapchasti/dlya_avtomobiley/rulevoe_upravlenie?i=1&q=308+%D0%BF%D0%B5%D0%B6%D0%BE+%D1%80%D1%83%D0%BB%D1%8C&s=1"
+//
