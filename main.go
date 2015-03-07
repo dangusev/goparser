@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/blasyrkh123/goparser/models"
+	"bitbucket.org/dangusev/goparser/models"
 	"github.com/moovweb/gokogiri"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -37,7 +37,7 @@ func getData(url string) []models.Item {
 		header, _ := item.Search(item.Path() + "/h3[@class=\"title\"]/a")
 		item := models.Item{
 			Title: strings.Trim(strings.TrimSpace(header[0].Content()), "\n"),
-			Url:   header[0].Attribute("href").Content(),
+			URL:   header[0].Attribute("href").Content(),
 		}
 		items[i] = item
 	}
@@ -70,7 +70,6 @@ func getPagesCount(pageURL string) (count int64) {
 
 func main() {
 	var results []models.Query
-	var parsedItems []models.Item
 
 	session, err := mgo.Dial("localhost:27017")
 	if err != nil {
@@ -79,12 +78,13 @@ func main() {
 	defer session.Close()
 	queries := session.DB("goparser").C("queries")
 
-	queries.Find(bson.M{}).All(&results)
+	queries.Find(bson.M{}).Select(bson.M{"url": 1}).All(&results)
 
 	// Iterate over queries in DB
 	for _, query := range results {
+		var parsedItems []models.Item
 		// Divide pages on groups of 10 and make requests for each page
-		pagesCount := getPagesCount(query.Url)
+		pagesCount := getPagesCount(query.URL)
 		loopCount := int(math.Ceil(float64(pagesCount) / 10))
 		pagesPerLoop := 10
 
@@ -109,21 +109,23 @@ func main() {
 				go func(w *sync.WaitGroup, u string) {
 					defer w.Done()
 					parsedItems = append(parsedItems, getData(u)...)
-				}(&wg, buildURL(query.Url, pages[k]))
+				}(&wg, buildURL(query.URL, pages[k]))
 			}
 			wg.Wait()
 		}
-	}
-	// fmt.Println(parsedItems)
+		// Insert parsed data in DB
+		query.Items = []models.Item{{URL: "test"}}
+		query.Update(session.Clone())
 
+	}
 }
 
 // u := "https://www.avito.ru/sankt-peterburg/zapchasti_i_aksessuary/zapchasti/dlya_avtomobiley?i=1&q=3"
 //TODO:
-// <DONE> Переход по страницам, парсинг нескольких страниц одновременно (таймаут 0.1, 10 за раз)
+// <DONE> Переход по страницам, парсинг нескольких страниц одновременно (10 за раз)
 // <DONE> URL BUILDING
+// <DONE>Запись результатов поиска в БД
 // Прокси
-// Запись результатов поиска в БД
 // Работа с запросами (CRUD)
 // Уведомления
 // Логирование
