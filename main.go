@@ -27,7 +27,6 @@ func makeRequest(url string) []byte {
 }
 
 func getData(url string) []models.Item {
-
 	root, _ := gokogiri.ParseHtml(makeRequest(url))
 	defer root.Free()
 
@@ -45,10 +44,10 @@ func getData(url string) []models.Item {
 	return items
 }
 
-func buildURL(u string, page int64) string {
+func buildURL(u string, page int) string {
 	parsed, _ := url.Parse(u)
 	q := parsed.Query()
-	q.Set("p", strconv.FormatInt(page, 10))
+	q.Set("p", strconv.FormatInt(int64(page), 10))
 	parsed.RawQuery = q.Encode()
 	return parsed.String()
 }
@@ -87,31 +86,43 @@ func main() {
 		// Divide pages on groups of 10 and make requests for each page
 		pagesCount := getPagesCount(query.Url)
 		loopCount := int(math.Ceil(float64(pagesCount) / 10))
+		pagesPerLoop := 10
 
 		for i := 1; i <= loopCount; i++ {
 			var wg sync.WaitGroup
-			if i == loopCount {
-				pagesPerLoop = int(math.Dim(float64(pagesCount), 10))
+
+			// Get pages count for last loop
+			if i == loopCount && int(math.Mod(float64(pagesCount), 10)) > 0 {
+				pagesPerLoop = int(math.Mod(float64(pagesCount), 10))
 			}
 
+			// Make slice of pages
+			pages := make([]int, 0, pagesPerLoop)
+			base := (i - 1) * 10
+			for c := 1; c <= pagesPerLoop; c++ {
+				pages = append(pages, base+c)
+			}
+			// Run getData concurrently
 			wg.Add(pagesPerLoop)
+
 			for k := 0; k < pagesPerLoop; k++ {
-				go func() {
-					defer wg.Done()
-					parsedItems = append(parsedItems, getData(query.Url)...)
-				}()
+				go func(w *sync.WaitGroup, u string) {
+					defer w.Done()
+					parsedItems = append(parsedItems, getData(u)...)
+				}(&wg, buildURL(query.Url, pages[k]))
 			}
 			wg.Wait()
-
 		}
 	}
+	// fmt.Println(parsedItems)
 
 }
 
 // u := "https://www.avito.ru/sankt-peterburg/zapchasti_i_aksessuary/zapchasti/dlya_avtomobiley?i=1&q=3"
 //TODO:
 // <DONE> Переход по страницам, парсинг нескольких страниц одновременно (таймаут 0.1, 10 за раз)
-// URL BUILDING
+// <DONE> URL BUILDING
+// Прокси
 // Запись результатов поиска в БД
 // Работа с запросами (CRUD)
 // Уведомления
