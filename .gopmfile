@@ -1,5 +1,5 @@
 [deps]
-github.com/blasyrkh123/goparser = 
+bitbucket.com/dangusev/goparser = 
 github.com/moovweb/gokogiri = 
 gopkg.in/mgo.v2 = 
 
