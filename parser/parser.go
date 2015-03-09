@@ -1,4 +1,4 @@
-package main
+package parser
 
 import (
     "io/ioutil"
@@ -10,7 +10,6 @@ import (
     "strings"
     "sync"
 
-    "bitbucket.org/dangusev/goparser/models"
     "github.com/moovweb/gokogiri"
     "gopkg.in/mgo.v2"
     "gopkg.in/mgo.v2/bson"
@@ -26,16 +25,16 @@ func makeRequest(url string) []byte {
     return body
 }
 
-func getData(url string) []models.Item {
+func getData(url string) []Item {
     root, _ := gokogiri.ParseHtml(makeRequest(url))
     defer root.Free()
 
     data, _ := root.Search("//div[contains(@class,\"item\")][@data-type=\"1\"]/div[@class=\"description\"]")
 
-    items := make([]models.Item, len(data))
+    items := make([]Item, len(data))
     for i, item := range data {
         header, _ := item.Search(item.Path() + "/h3[@class=\"title\"]/a")
-        item := models.Item{
+        item := Item{
             Title: strings.Trim(strings.TrimSpace(header[0].Content()), "\n"),
             URL:   header[0].Attribute("href").Content(),
         }
@@ -69,7 +68,7 @@ func getPagesCount(pageURL string) (count int64) {
 }
 
 func RunParser() {
-    var results []models.Query
+    var results []Query
 
     session, err := mgo.Dial("localhost:27017")
     if err != nil {
@@ -82,7 +81,7 @@ func RunParser() {
 
     // Iterate over queries in DB
     for _, query := range results {
-        var parsedItems []models.Item
+        var parsedItems []Item
         // Divide pages on groups of 10 and make requests for each page
         pagesCount := getPagesCount(query.URL)
         loopCount := int(math.Ceil(float64(pagesCount) / 10))
@@ -114,7 +113,7 @@ func RunParser() {
             wg.Wait()
         }
         // Insert parsed data in DB
-        query.Items = []models.Item{{URL: "test"}}
+        query.Items = results
         query.Update(session.Clone())
 
     }

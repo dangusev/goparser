@@ -4,7 +4,7 @@ import (
     "net/http"
     "log"
     "html/template"
-    "bitbucket.org/dangusev/goparser/models"
+    "github.com/dangusev/goparser/parser"
     "gopkg.in/mgo.v2/bson"
     "gopkg.in/mgo.v2"
     "path/filepath"
@@ -22,7 +22,7 @@ func getTemplate(name string) (*template.Template) {
 }
 
 func mainHandler(w http.ResponseWriter, r *http.Request) {
-    var results []models.Query
+    var results []parser.Query
 
     session, err := mgo.Dial("localhost:27017")
     if err != nil {
@@ -39,9 +39,12 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-    http.HandleFunc("/", mainHandler)
-    err := http.ListenAndServe(":8080", nil)
-    if err != nil {
-        log.Fatal(err)
-    }
+//    fs := http.FileServer(http.Dir("static"))
+//    http.Handle("/static/", http.StripPrefix("/static/", fs))
+//
+//    http.HandleFunc("/", mainHandler)
+//    err := http.ListenAndServe(":8080", nil)
+//    if err != nil {
+//        log.Fatal(err)
+//    }
 }

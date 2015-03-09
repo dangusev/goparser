@@ -1,4 +1,4 @@
-package models
+package parser
 
 import (
 	"log"
@@ -26,9 +26,27 @@ func (q *Query) Update(session *mgo.Session) {
 	}
 }
 
+func (q Query) itemsAsMap() (map[string]Item) {
+    itemsMap := make(map[string]Item)
+    for _, item := range q.Items {
+        itemsMap[item.URL] = item
+    }
+    return itemsMap
+}
+
+func (q Query) ItemsContains (item Item) bool {
+    for key, _:= range q.itemsAsMap() {
+        if key == item.URL {
+            return true
+        }
+    }
+    return false
+}
+
 // Item from site
 type Item struct {
 	ID    bson.ObjectId `bson:"_id,omitempty"`
 	Title string        `bson:"title"`
 	URL   string        `bson:"url"`
+    Is_new bool         `bson:"is_new"`
 }
