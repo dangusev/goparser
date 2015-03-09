@@ -114,6 +114,9 @@ func RunParser() {
         }
         // Insert parsed data in DB
         query.Items = results
+        for _, item := range query.Items {
+            item.Is_new = query.ItemsContains(item)
+        }
         query.Update(session.Clone())
 
     }

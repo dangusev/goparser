@@ -5,6 +5,7 @@ import (
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+    "time"
 )
 
 // Query from site
@@ -12,6 +13,7 @@ type Query struct {
 	ID    bson.ObjectId `bson:"_id,omitempty"`
 	URL   string        `bson:"url"`
 	Items []Item        `bson:"items"`
+    LastParsedAt time.Time `bson:"last_parsed_at"`
 }
 
 // Update Query instance in Mongodb
@@ -19,7 +21,7 @@ func (q *Query) Update(session *mgo.Session) {
 	defer session.Close()
 	err := session.DB("goparser").C("queries").Update(
 		bson.M{"_id": q.ID},
-		bson.M{"$set": bson.M{"items": q.Items}},
+		bson.M{"$set": bson.M{"items": q.Items, "last_parsed_at": time.Now()}},
 	)
 	if err != nil {
 		log.Fatal(err)
