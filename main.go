@@ -8,17 +8,22 @@ import (
     "gopkg.in/mgo.v2/bson"
     "gopkg.in/mgo.v2"
     "path/filepath"
+    "github.com/gorilla/mux"
+    "fmt"
 )
 
 const TEMPLATE_DIR="templates"
 
-func getTemplate(name string) (*template.Template) {
-    tmpName := filepath.Join(TEMPLATE_DIR, name)
-    t, err := template.ParseFiles(tmpName)
-    if err != nil {
-        log.Fatal(err)
+func prepareTemplateName(name string) string {
+    return filepath.Join(TEMPLATE_DIR, name)
+}
+
+func buildTemplateNames(names ...string) []string{
+    var preparedNames []string
+    for _, name := range names {
+        preparedNames = append(preparedNames, prepareTemplateName(name))
     }
-    return t
+    return preparedNames
 }
 
 func mainHandler(w http.ResponseWriter, r *http.Request) {
@@ -32,19 +37,31 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
     queries := session.DB("goparser").C("queries")
 
     queries.Find(bson.M{}).All(&results)
-    t := getTemplate("main.html")
+    t := template.Must(template.ParseFiles(buildTemplateNames("base.html", "main.html")...))
     t.Execute(w, map[string]interface{}{
         "queries": results,
     })
 }
 
+func ItemsListHandler(w http.ResponseWriter, r *http.Request){
+    q := parser.GetQueryById(mux.Vars(r)["id"])
+    fmt.Println(q)
+    // TODO Items display
+}
+
 func main() {
-//    fs := http.FileServer(http.Dir("static"))
-//    http.Handle("/static/", http.StripPrefix("/static/", fs))
-//
-//    http.HandleFunc("/", mainHandler)
-//    err := http.ListenAndServe(":8080", nil)
-//    if err != nil {
-//        log.Fatal(err)
-//    }
+    // Serve static
+    fs := http.FileServer(http.Dir("static"))
+    http.Handle("/static/", http.StripPrefix("/static/", fs))
+
+    // Routes
+    r := mux.NewRouter()
+    r.HandleFunc("/", mainHandler).Name("main")
+    r.HandleFunc("/query/{id}/items", ItemsListHandler).Name("items-list")
+
+    http.Handle("/", r)
+    err := http.ListenAndServe(":8080", nil)
+    if err != nil {
+        log.Fatal(err)
+    }
 }

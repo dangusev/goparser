@@ -6,14 +6,20 @@ import (
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
     "time"
+    "fmt"
 )
 
 // Query from site
 type Query struct {
 	ID    bson.ObjectId `bson:"_id,omitempty"`
+    Title string        `bson:"title"`
 	URL   string        `bson:"url"`
 	Items []Item        `bson:"items"`
     LastParsedAt time.Time `bson:"last_parsed_at"`
+}
+
+func (q *Query) GetItemsUrl() (u string) {
+    return fmt.Sprintf("/query/%s/items", q.ID.String())
 }
 
 // Update Query instance in Mongodb
@@ -43,6 +49,20 @@ func (q Query) ItemsContains (item Item) bool {
         }
     }
     return false
+}
+
+// Returns Query by ObjectIdHex
+func GetQueryById(id string) (*Query) {
+    var q Query
+    session, err := mgo.Dial("localhost:27017")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer session.Close()
+    queries := session.DB("goparser").C("queries")
+
+    queries.FindId(bson.ObjectIdHex("54fb7acc851aace30a3a0b91")).One(&q)
+    return &q
 }
 
 // Item from site

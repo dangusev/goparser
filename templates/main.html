@@ -1,16 +1,14 @@
-<!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title>Goparser</title>
-    <link rel="stylesheet" href="/static/bootstrap-3.3.2/css/bootstrap.min.css">
+{{ define "content" }}
 
-    <script src="/static/jquery-1.11.2/jquery-1.11.2.min.js"></script>
-    <script src="/static/bootstrap-3.3.2/js/bootstrap.min.js"></script>
-</head>
-<body>
-{{range $element := .queries}}
-{{ $element.URL }}
+<div class="col-md-12">
+    <table class="table">
+        {{range $element := .queries}}
+        <tr>
+            <td>{{if $element.Title}}{{ $element.Title }}{{else}}Noname query{{end}}</td>
+            <td><a href="{{ $element.GetItemsUrl }}">Результаты выдачи</a></td>
+            <td><a target="_blank" href="{{ $element.URL }}">Перейти по запросу <span class="glyphicon glyphicon-share-alt"></span></a></td></tr>
+        {{ end }}
+    </table>
+</div>
+
 {{ end }}
-</body>
-</html>

@@ -113,7 +113,7 @@ func RunParser() {
             wg.Wait()
         }
         // Insert parsed data in DB
-        query.Items = results
+        query.Items = parsedItems
         for _, item := range query.Items {
             item.Is_new = query.ItemsContains(item)
         }
