@@ -9,7 +9,6 @@ import (
     "gopkg.in/mgo.v2"
     "path/filepath"
     "github.com/gorilla/mux"
-    "fmt"
 )
 
 const TEMPLATE_DIR="templates"
@@ -45,8 +44,11 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 
 func ItemsListHandler(w http.ResponseWriter, r *http.Request){
     q := parser.GetQueryById(mux.Vars(r)["id"])
-    fmt.Println(q)
-    // TODO Items display
+    t := template.Must(template.ParseFiles(buildTemplateNames("base.html", "items.html")...))
+    t.Execute(w, map[string]interface{}{
+        "query": q,
+        "items": q.Items,
+    })
 }
 
 func main() {

@@ -19,7 +19,7 @@ type Query struct {
 }
 
 func (q *Query) GetItemsUrl() (u string) {
-    return fmt.Sprintf("/query/%s/items", q.ID.String())
+    return fmt.Sprintf("/query/%s/items", q.ID.Hex())
 }
 
 // Update Query instance in Mongodb
@@ -34,7 +34,7 @@ func (q *Query) Update(session *mgo.Session) {
 	}
 }
 
-func (q Query) itemsAsMap() (map[string]Item) {
+func (q *Query) itemsAsMap() (map[string]Item) {
     itemsMap := make(map[string]Item)
     for _, item := range q.Items {
         itemsMap[item.URL] = item
@@ -42,7 +42,7 @@ func (q Query) itemsAsMap() (map[string]Item) {
     return itemsMap
 }
 
-func (q Query) ItemsContains (item Item) bool {
+func (q *Query) ItemsContains (item Item) bool {
     for key, _:= range q.itemsAsMap() {
         if key == item.URL {
             return true
@@ -61,7 +61,7 @@ func GetQueryById(id string) (*Query) {
     defer session.Close()
     queries := session.DB("goparser").C("queries")
 
-    queries.FindId(bson.ObjectIdHex("54fb7acc851aace30a3a0b91")).One(&q)
+    queries.FindId(bson.ObjectIdHex(id)).One(&q)
     return &q
 }
 
