@@ -9,6 +9,7 @@ import (
     "gopkg.in/mgo.v2"
     "path/filepath"
     "github.com/gorilla/mux"
+    "os"
 )
 
 const TEMPLATE_DIR="templates"
@@ -47,11 +48,15 @@ func ItemsListHandler(w http.ResponseWriter, r *http.Request){
     t := template.Must(template.ParseFiles(buildTemplateNames("base.html", "items.html")...))
     t.Execute(w, map[string]interface{}{
         "query": q,
-        "items": q.Items,
+        "items": parser.GetOrderedQueryItems(q.ID.Hex()),
     })
 }
 
 func main() {
+    args := os.Args[1:]
+    if len(args) > 0 && args[0] == "run_parser" {
+        parser.RunParser()
+    }
     // Serve static
     fs := http.FileServer(http.Dir("static"))
     http.Handle("/static/", http.StripPrefix("/static/", fs))

@@ -65,10 +65,30 @@ func GetQueryById(id string) (*Query) {
     return &q
 }
 
+func GetOrderedQueryItems(id string) []Item {
+    var q Query
+    session, err := mgo.Dial("localhost:27017")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer session.Close()
+    queries := session.DB("goparser").C("queries")
+
+    pipe := queries.Pipe([]bson.M{
+        {"$match": bson.M{"_id": bson.ObjectIdHex(id)}},
+        {"$unwind": "$items"},
+        {"$sort": bson.M{"items.is_new": 1, "items.price": 1}},
+        {"$group": bson.M{"_id":"$_id", "items": bson.M{"$push": "$items"}}},
+    })
+    pipe.One(&q)
+    return q.Items
+}
+
 // Item from site
 type Item struct {
 	ID    bson.ObjectId `bson:"_id,omitempty"`
 	Title string        `bson:"title"`
 	URL   string        `bson:"url"`
     Is_new bool         `bson:"is_new"`
+    Price int64         `bson:"price"`
 }

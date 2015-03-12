@@ -1,13 +1,21 @@
 {{ define "content" }}
 
-<div class="col-md-12">
-    <table class="table">
-        {{range $element := .query.Items}}
-        <tr>
-            <td>{{ $element.Title }}</td>
-        </tr>
-        {{ end }}
-    </table>
+<div class="row top-buffer">
+    <div class="col-md-2"><a class="btn btn-default" href="/">Назад к списку</a></div>
+    <div class="col-md-10"></div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <table class="table">
+            {{range $element := .items}}
+            <tr>
+                <td>{{ $element.Title }}</td>
+                <td>{{if $element.Price }}{{ $element.Price }} руб.{{end}}</td>
+                <td><a target="_blank" href="{{ $element.URL }}">Перейти к товару <span class="glyphicon glyphicon-share-alt"></span></a></td>
+            </tr>
+            {{ end }}
+        </table>
+    </div>
 </div>
 
 {{ end }}

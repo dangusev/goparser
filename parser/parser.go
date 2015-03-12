@@ -13,6 +13,8 @@ import (
     "github.com/moovweb/gokogiri"
     "gopkg.in/mgo.v2"
     "gopkg.in/mgo.v2/bson"
+    "fmt"
+    "regexp"
 )
 
 func makeRequest(url string) []byte {
@@ -25,8 +27,17 @@ func makeRequest(url string) []byte {
     return body
 }
 
-func getData(url string) []Item {
-    root, _ := gokogiri.ParseHtml(makeRequest(url))
+// Get price value from string
+func cleanPrice(s string) int64 {
+    r := regexp.MustCompile("\\w+")
+    priceString := strings.Join(r.FindAllString(s, -1), "")
+    priceInt, _ := strconv.ParseInt(r.FindString(strings.Replace(priceString, " ", "", -1)), 10, 64)
+    return priceInt
+}
+
+func getData(u string) []Item {
+    parsedUrl, _ := url.Parse(u)
+    root, _ := gokogiri.ParseHtml(makeRequest(u))
     defer root.Free()
 
     data, _ := root.Search("//div[contains(@class,\"item\")][@data-type=\"1\"]/div[@class=\"description\"]")
@@ -34,9 +45,12 @@ func getData(url string) []Item {
     items := make([]Item, len(data))
     for i, item := range data {
         header, _ := item.Search(item.Path() + "/h3[@class=\"title\"]/a")
+        about, _ := item.Search(item.Path() + "/div[@class=\"about\"]")
+
         item := Item{
             Title: strings.Trim(strings.TrimSpace(header[0].Content()), "\n"),
-            URL:   header[0].Attribute("href").Content(),
+            URL:   fmt.Sprintf("%s://%s%s", parsedUrl.Scheme, parsedUrl.Host, header[0].Attribute("href").Content()),
+            Price: cleanPrice(about[0].Content()),
         }
         items[i] = item
     }
@@ -121,15 +135,3 @@ func RunParser() {
 
     }
 }
-
-// u := "https://www.avito.ru/sankt-peterburg/zapchasti_i_aksessuary/zapchasti/dlya_avtomobiley?i=1&q=3"
-//TODO:
-// <DONE> Переход по страницам, парсинг нескольких страниц одновременно (10 за раз)
-// <DONE> URL BUILDING
-// <DONE>Запись результатов поиска в БД
-// Прокси
-// Работа с запросами (CRUD)
-// Уведомления
-// Логирование
-// "https://www.avito.ru/sankt-peterburg/zapchasti_i_aksessuary/zapchasti/dlya_avtomobiley/rulevoe_upravlenie?i=1&q=308+%D0%BF%D0%B5%D0%B6%D0%BE+%D1%80%D1%83%D0%BB%D1%8C&s=1"
-//
