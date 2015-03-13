@@ -84,6 +84,18 @@ func GetOrderedQueryItems(id string) []Item {
     return q.Items
 }
 
+func GetQueriesWithNewItems() []Query {
+    var result []Query
+    session, err := mgo.Dial("localhost:27017")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer session.Close()
+    queries := session.DB("goparser").C("queries")
+    queries.Find(bson.M{"items": bson.M{"$elemMatch": bson.M{"is_new": true}}}).All(&result)
+    return result
+}
+
 // Item from site
 type Item struct {
 	ID    bson.ObjectId `bson:"_id,omitempty"`

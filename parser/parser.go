@@ -15,6 +15,7 @@ import (
     "gopkg.in/mgo.v2/bson"
     "fmt"
     "regexp"
+    "net/smtp"
 )
 
 func makeRequest(url string) []byte {
@@ -136,4 +137,21 @@ func RunParser() {
         log.Println(fmt.Sprintf("Parsing of query %s finished", query.URL))
     }
     log.Println("Parsing finished")
+}
+
+
+func SendNotifications(){
+    var messages []string
+    auth := smtp.PlainAuth("", "dangusev92@gmail.com", "K8qetuQunuRuspb", "smtp.gmail.com")
+    to := []string{"dangusev92@gmail.com"}
+
+    updatedQueries := GetQueriesWithNewItems()
+    for _, q := range {
+
+    }
+
+    err := smtp.SendMail("smtp.gmail.com:465", auth, "goparser@gmail.com", to, []byte(""))
+    if err != nil {
+        log.Fatal(err)
+    }
 }

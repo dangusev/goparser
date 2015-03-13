@@ -1,18 +1,20 @@
 package main
 
 import (
-    "net/http"
     "log"
+    "os"
+    "fmt"
     "html/template"
-    "github.com/dangusev/goparser/parser"
+    "path/filepath"
+    "net/http"
     "gopkg.in/mgo.v2/bson"
     "gopkg.in/mgo.v2"
-    "path/filepath"
     "github.com/gorilla/mux"
-    "os"
+    "github.com/robfig/cron"
+    "github.com/dangusev/goparser/parser"
 )
 
-const TEMPLATE_DIR="templates"
+const TEMPLATE_DIR = "templates"
 
 func prepareTemplateName(name string) string {
     return filepath.Join(TEMPLATE_DIR, name)
@@ -54,8 +56,10 @@ func ItemsListHandler(w http.ResponseWriter, r *http.Request){
 
 func main() {
     args := os.Args[1:]
-    if len(args) > 0 && args[0] == "run_parser" {
-        parser.RunParser()
+    if len(args) > 0 && args[0] == "with_parser" {
+        // Run parser by cron
+        c := cron.New()
+        c.AddFunc("@every 8h", parser.RunParser())
     }
     // Serve static
     fs := http.FileServer(http.Dir("static"))

@@ -9,7 +9,8 @@
         <table class="table">
             {{range $element := .items}}
             <tr>
-                <td>{{ $element.Title }}</td>
+                <td>{{if $element.Is_new}} <span class="glyphicon glyphicon-exclamation-sign"></span> {{end}}
+                    {{ $element.Title }}</td>
                 <td>{{if $element.Price }}{{ $element.Price }} руб.{{end}}</td>
                 <td><a target="_blank" href="{{ $element.URL }}">Перейти к товару <span class="glyphicon glyphicon-share-alt"></span></a></td>
             </tr>
