@@ -3,6 +3,7 @@ github.com/dangusev/goparser =
 github.com/moovweb/gokogiri = 
 gopkg.in/mgo.v2 = 
 github.com/gorilla/mux = 
+github.com/robfig/cron = 
 
 [res]
 include = 

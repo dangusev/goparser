@@ -2,16 +2,15 @@ package main
 
 import (
     "log"
-    "os"
-    "fmt"
     "html/template"
     "path/filepath"
     "net/http"
     "gopkg.in/mgo.v2/bson"
     "gopkg.in/mgo.v2"
     "github.com/gorilla/mux"
-    "github.com/robfig/cron"
     "github.com/dangusev/goparser/parser"
+    "github.com/robfig/cron"
+    "os"
 )
 
 const TEMPLATE_DIR = "templates"
@@ -59,7 +58,8 @@ func main() {
     if len(args) > 0 && args[0] == "with_parser" {
         // Run parser by cron
         c := cron.New()
-        c.AddFunc("@every 8h", parser.RunParser())
+        c.AddFunc("@every 8h", parser.RunParser)
+        c.AddFunc("@every 8h", parser.SendNotifications)
     }
     // Serve static
     fs := http.FileServer(http.Dir("static"))

@@ -15,8 +15,12 @@ import (
     "gopkg.in/mgo.v2/bson"
     "fmt"
     "regexp"
+    "text/template"
+    "bytes"
     "net/smtp"
 )
+
+const MIME = "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 
 func makeRequest(url string) []byte {
     response, err := http.Get(url)
@@ -139,19 +143,28 @@ func RunParser() {
     log.Println("Parsing finished")
 }
 
-
 func SendNotifications(){
-    var messages []string
     auth := smtp.PlainAuth("", "dangusev92@gmail.com", "K8qetuQunuRuspb", "smtp.gmail.com")
     to := []string{"dangusev92@gmail.com"}
+    context := make(map[string]interface{})
+    queries := make([]Query, 0, 0)
 
     updatedQueries := GetQueriesWithNewItems()
-    for _, q := range {
+    if len(updatedQueries) > 0{
+        t := template.Must(template.ParseFiles("templates/email_message.html"))
+        for _, q := range updatedQueries {
+            queries = append(queries, q)
+        }
+        context["queries"] = queries
+        buf := bytes.Buffer{}
+        t.Execute(&buf, context)
 
-    }
-
-    err := smtp.SendMail("smtp.gmail.com:465", auth, "goparser@gmail.com", to, []byte(""))
-    if err != nil {
-        log.Fatal(err)
+        message := append([]byte(MIME), buf.Bytes()...)
+        err := smtp.SendMail("smtp.gmail.com:587", auth, "goparser@gmail.com", to, message)
+        if err != nil {
+            log.Println(err)
+        } else {
+            log.Println(fmt.Sprintf("Email to %s sent", to))
+        }
     }
 }
