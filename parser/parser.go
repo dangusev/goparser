@@ -83,7 +83,7 @@ func getPagesCount(pageURL string) (count int64) {
 
 func RunParser() {
     var results []Query
-
+    log.Println("Started parsing...")
     session, err := mgo.Dial("localhost:27017")
     if err != nil {
         log.Fatal(err)
@@ -95,6 +95,7 @@ func RunParser() {
 
     // Iterate over queries in DB
     for _, query := range results {
+        log.Println(fmt.Sprintf("Parse query %s", query.URL))
         var parsedItems []Item
         // Divide pages on groups of 10 and make requests for each page
         pagesCount := getPagesCount(query.URL)
@@ -132,6 +133,7 @@ func RunParser() {
             item.Is_new = !query.ItemsContains(item)
         }
         query.Update(session.Clone())
-
+        log.Println(fmt.Sprintf("Parsing of query %s finished", query.URL))
     }
+    log.Println("Parsing finished")
 }
