@@ -3,55 +3,51 @@ package main
 import (
     "log"
     "html/template"
-    "path/filepath"
     "net/http"
-    "gopkg.in/mgo.v2/bson"
-    "gopkg.in/mgo.v2"
     "github.com/gorilla/mux"
     "github.com/dangusev/goparser/parser"
     "github.com/robfig/cron"
     "os"
+    "path/filepath"
 )
 
-const TEMPLATE_DIR = "templates"
+func prepareTemplates() map[string]*template.Template{
+    // custom template delimiters since the Go default delimiters clash
+    // with Angular's default.
+    templates := make(map[string]*template.Template)
+    templateDelims := []string{"{{%", "%}}"}
+    basePath := "templates"
+    baseTemplate := "base.html"
+    // initialize the templates,
+    // couldn't have used http://golang.org/pkg/html/template/#ParseGlob
+    // since we have custom delimiters.
+    err := filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error {
+        if err != nil {
+            return err
+        }
+        // don't process folders themselves
+        if info.IsDir() {
+            return nil
+        }
+        templateName := path[len(basePath)+1:]
 
-func prepareTemplateName(name string) string {
-    return filepath.Join(TEMPLATE_DIR, name)
-}
+        if templateName == baseTemplate {
+            return nil
+        }
 
-func buildTemplateNames(names ...string) []string{
-    var preparedNames []string
-    for _, name := range names {
-        preparedNames = append(preparedNames, prepareTemplateName(name))
-    }
-    return preparedNames
-}
+        t := template.New(baseTemplate)
+        t.Delims(templateDelims[0], templateDelims[1])
+        templates[templateName] = template.Must(t.ParseFiles(filepath.Join(basePath, baseTemplate), path))
 
-func mainHandler(w http.ResponseWriter, r *http.Request) {
-    var results []parser.Query
-
-    session, err := mgo.Dial("localhost:27017")
+        log.Printf("Processed template %s\n", templateName)
+        return err
+    })
     if err != nil {
         log.Fatal(err)
     }
-    defer session.Close()
-    queries := session.DB("goparser").C("queries")
-
-    queries.Find(bson.M{}).All(&results)
-    t := template.Must(template.ParseFiles(buildTemplateNames("base.html", "main.html")...))
-    t.Execute(w, map[string]interface{}{
-        "queries": results,
-    })
+    return templates
 }
 
-func ItemsListHandler(w http.ResponseWriter, r *http.Request){
-    q := parser.GetQueryById(mux.Vars(r)["id"])
-    t := template.Must(template.ParseFiles(buildTemplateNames("base.html", "items.html")...))
-    t.Execute(w, map[string]interface{}{
-        "query": q,
-        "items": parser.GetOrderedQueryItems(q.ID.Hex()),
-    })
-}
 
 func main() {
     args := os.Args[1:]
@@ -65,10 +61,13 @@ func main() {
     fs := http.FileServer(http.Dir("static"))
     http.Handle("/static/", http.StripPrefix("/static/", fs))
 
+    c := &globalContext{templates:prepareTemplates()}
+
     // Routes
     r := mux.NewRouter()
-    r.HandleFunc("/", mainHandler).Name("main")
-    r.HandleFunc("/query/{id}/items", ItemsListHandler).Name("items-list")
+    r.Handle("/", extendedHandler{c, mainHandler}).Name("main")
+    r.Handle("/queries/", extendedHandler{c, QueriesListHandler}).Name("queries-list")
+    r.Handle("/queries/{id}/items", extendedHandler{c, ItemsListHandler}).Name("items-list")
 
     http.Handle("/", r)
     log.Println("Run goparser on localhost:8080")

@@ -1,14 +1,15 @@
-{{ define "content" }}
+{{% define "content" %}}
 
-<div class="col-md-12">
+<div ng-controller="QueriesController" class="col-md-12">
     <table class="table">
-        {{range $element := .queries}}
-        <tr>
-            <td>{{if $element.Title}}{{ $element.Title }}{{else}}Noname query{{end}}</td>
-            <td><a href="{{ $element.GetItemsUrl }}">Результаты выдачи</a></td>
-            <td><a target="_blank" href="{{ $element.URL }}">Перейти по запросу <span class="glyphicon glyphicon-share-alt"></span></a></td></tr>
+        <tr ng-repeat="q in queries">
+            <td ng-if="q.Title">{{ q.Title }}</td>
+            <td ng-if="!q.Title">Noname query</td>
+
+            <td><a href="">Результаты выдачи</a></td>
+            <td><a target="_blank" href="{{ q.URL }}">Перейти по запросу <span class="glyphicon glyphicon-share-alt"></span></a></td></tr>
         {{ end }}
     </table>
 </div>
 
-{{ end }}
+{{% end %}}

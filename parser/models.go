@@ -19,7 +19,7 @@ type Query struct {
 }
 
 func (q *Query) GetItemsUrl() (u string) {
-    return fmt.Sprintf("/query/%s/items", q.ID.Hex())
+    return fmt.Sprintf("/queries/%s/items", q.ID.Hex())
 }
 
 // Update Query instance in Mongodb
