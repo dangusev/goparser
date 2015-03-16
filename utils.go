@@ -3,6 +3,7 @@ import (
     "net/http"
     "encoding/json"
     "html/template"
+    "log"
 )
 
 type Context map[string]interface{}
@@ -21,6 +22,7 @@ type extendedHandler struct {
 // Our appHandler type will now satisify http.Handler
 func (eh extendedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     eh.h(eh.globalContext, w, r)
+    log.Println(r.Method, r.URL)
 }
 
 

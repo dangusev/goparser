@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Goparser</title>
     <script src="/static/angular.min.js"></script>
+    <script src="/static/angular-ui-router.min.js"></script>
     <link rel="stylesheet" href="/static/bootstrap-3.3.2/css/bootstrap.min.css">
     <style>
         .top-buffer {
@@ -14,8 +15,8 @@
 <body>
 <div class="container">
     <h1>Goparser</h1>
-    <div class="row">
-            {{% template "content" . %}}
+    <div ui-view class="row">
+        {{% template "content" . %}}
     </div>
 </div>
 <script src="/static/controllers.js"></script>

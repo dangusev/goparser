@@ -7,6 +7,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
     "time"
     "fmt"
+    "encoding/json"
 )
 
 // Query from site
@@ -50,6 +51,11 @@ func (q *Query) ItemsContains (item Item) bool {
     }
     return false
 }
+
+func (q Query) MarshalJSON() ([]byte, error) {
+    return json.Marshal()
+}
+
 
 // Returns Query by ObjectIdHex
 func GetQueryById(id string) (*Query) {
@@ -104,3 +110,6 @@ type Item struct {
     Is_new bool         `bson:"is_new"`
     Price int64         `bson:"price"`
 }
+
+
+

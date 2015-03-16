@@ -13,6 +13,12 @@ func mainHandler(c *globalContext, w http.ResponseWriter, r *http.Request) {
     c.templates["main.html"].ExecuteTemplate(w, "base.html", Context{})
 }
 
+
+func templatesHandler(c *globalContext, w http.ResponseWriter, r *http.Request) {
+    templateName := mux.Vars(r)["tname"]
+    c.templates[templateName].ExecuteTemplate(w, "base.html", Context{})
+}
+
 func QueriesListHandler(c *globalContext, w http.ResponseWriter, r *http.Request) {
     var results []parser.Query
 
@@ -28,7 +34,7 @@ func QueriesListHandler(c *globalContext, w http.ResponseWriter, r *http.Request
 
 func ItemsListHandler(c *globalContext, w http.ResponseWriter, r *http.Request){
     q := parser.GetQueryById(mux.Vars(r)["id"])
-    c.templates["items.html"].ExecuteTemplate(w, "base.html", Context{
+    renderJson(w, Context{
         "query": q,
         "items": parser.GetOrderedQueryItems(q.ID.Hex()),
     })
