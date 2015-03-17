@@ -11,7 +11,7 @@ import (
     "path/filepath"
 )
 
-func prepareTemplates() map[string]*template.Template{
+func prepareTemplates(*globalContext) map[string]*template.Template{
     // custom template delimiters since the Go default delimiters clash
     // with Angular's default.
     templates := make(map[string]*template.Template)
@@ -34,10 +34,14 @@ func prepareTemplates() map[string]*template.Template{
         if templateName == baseTemplate {
             return nil
         }
-
+        dirName, _ := filepath.Split(templateName)
         t := template.New(baseTemplate)
         t.Delims(templateDelims[0], templateDelims[1])
-        templates[templateName] = template.Must(t.ParseFiles(filepath.Join(basePath, baseTemplate), path))
+        if dirName == "ajax/"{
+            templates[templateName] = template.Must(t.ParseFiles(path))
+        } else {
+            templates[templateName] = template.Must(t.ParseFiles(filepath.Join(basePath, baseTemplate), path))
+        }
 
         log.Printf("Processed template %s\n", templateName)
         return err
@@ -61,12 +65,13 @@ func main() {
     fs := http.FileServer(http.Dir("static"))
     http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-    c := &globalContext{templates:prepareTemplates()}
+    c := &globalContext{}
+    c.templates = prepareTemplates(c)
 
     // Routes
     r := mux.NewRouter()
     r.Handle("/", extendedHandler{c, mainHandler}).Name("main")
-    r.Handle("/templates/{tname}/", extendedHandler{c, templatesHandler}).Name("templates")
+    r.Handle("/templates/", extendedHandler{c, templatesAjaxHandler}).Name("templates")
 
     r.Handle("/api/queries/", extendedHandler{c, QueriesListHandler}).Name("queries-list")
     r.Handle("/api/queries/{id}/items/", extendedHandler{c, ItemsListHandler}).Name("items-list")

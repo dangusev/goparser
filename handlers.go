@@ -6,6 +6,7 @@ import (
     "gopkg.in/mgo.v2/bson"
     "github.com/gorilla/mux"
     "github.com/dangusev/goparser/parser"
+    "path/filepath"
 )
 
 
@@ -14,9 +15,16 @@ func mainHandler(c *globalContext, w http.ResponseWriter, r *http.Request) {
 }
 
 
-func templatesHandler(c *globalContext, w http.ResponseWriter, r *http.Request) {
-    templateName := mux.Vars(r)["tname"]
-    c.templates[templateName].ExecuteTemplate(w, "base.html", Context{})
+func templatesAjaxHandler(c *globalContext, w http.ResponseWriter, r *http.Request) {
+    // Returns template for angular renderer
+    templateName := r.URL.Query().Get("tname")
+    _, fname := filepath.Split(templateName)
+    t, exists := c.templates[templateName]
+    if exists {
+        t.ExecuteTemplate(w, fname, Context{})
+    } else {
+        w.WriteHeader(http.StatusNotFound)
+    }
 }
 
 func QueriesListHandler(c *globalContext, w http.ResponseWriter, r *http.Request) {

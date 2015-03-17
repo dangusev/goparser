@@ -1,0 +1,10 @@
+<div ng-controller="QueriesController" class="col-md-12">
+    <table class="table">
+        <tr ng-repeat="q in Queries">
+            <td ng-if="q.Title">{{ q.Title }}</td>
+            <td ng-if="!q.Title">Noname query</td>
+
+            <td><a ui-sref="{{ q.ItemsURL }}">Результаты выдачи</a></td>
+            <td><a target="_blank" href="{{ q.URL }}">Перейти по запросу <span class="glyphicon glyphicon-share-alt"></span></a></td></tr>
+    </table>
+</div>

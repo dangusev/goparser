@@ -53,7 +53,23 @@ func (q *Query) ItemsContains (item Item) bool {
 }
 
 func (q Query) MarshalJSON() ([]byte, error) {
-    return json.Marshal()
+    /* To extend existed struct we need to create new struct
+       with the same fields and add extra fields what we desire*/
+    return json.Marshal(struct{
+        ID    bson.ObjectId `bson:"_id,omitempty"`
+        Title string        `bson:"title"`
+        URL   string        `bson:"url"`
+        Items []Item        `bson:"items"`
+        LastParsedAt time.Time `bson:"last_parsed_at"`
+        ItemsURL string
+    }{
+        q.ID,
+        q.Title,
+        q.URL,
+        q.Items,
+        q.LastParsedAt,
+        q.GetItemsUrl(),
+    })
 }
 
 

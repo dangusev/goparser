@@ -10,8 +10,13 @@ app.config(function ($stateProvider, $urlRouterProvider) {
     $stateProvider
         .state("main", {
             url: "/",
-            templateUrl: "/templates/main.html",
+            templateUrl: "/templates/?tname=ajax/queries.html",
             controller: "QueriesController"
+        })
+        .state("items", {
+            url: "/queries/:queryId/items/",
+            templateUrl: "/templates/?tname=ajax/items.html",
+            controller: "ItemsController"
         });
     //$routeProvider.when("/", {
     //    templateUrl: "/templates/main.html",
@@ -31,4 +36,9 @@ app.controller('QueriesController', ['$scope', '$http', function($scope,$http) {
     $http.get("/api/queries/").success(function (response) {
         $scope.Queries = response;
     });
+}])
+    .controller('ItemsController,' ['$scope', '$http', function($scope,$http){
+        $http.get("/api//").success(function (response) {
+            $scope.Items = response;
+        });
 }]);
