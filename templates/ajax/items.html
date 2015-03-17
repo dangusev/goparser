@@ -1,22 +1,18 @@
-{{% define "content" %}}
-
 <div class="row top-buffer">
-    <div class="col-md-2"><a class="btn btn-default" href="/">Назад к списку</a></div>
+    <div class="col-md-2"><a class="btn btn-default" ui-sref="main">Назад к списку</a></div>
     <div class="col-md-10"></div>
 </div>
 <div class="row">
     <div class="col-md-12">
         <table class="table">
-            {{range $element := .items}}
-            <tr>
-                <td>{{if $element.Is_new}} <span class="glyphicon glyphicon-exclamation-sign"></span> {{end}}
-                    {{ $element.Title }}</td>
-                <td>{{if $element.Price }}{{ $element.Price }} руб.{{end}}</td>
-                <td><a target="_blank" href="{{ $element.URL }}">Перейти к товару <span class="glyphicon glyphicon-share-alt"></span></a></td>
+            <tr ng-repeat="item in Items">
+                <td>
+                    <span ng-if="item.Is_new" class="glyphicon glyphicon-exclamation-sign"></span>
+                    {{ item.Title }}
+                </td>
+                <td><p ng-if="item.Price">{{ item.Price }} руб.</p></td>
+                <td><a target="_blank" href="{{ item.URL }}">Перейти к товару <span class="glyphicon glyphicon-share-alt"></span></a></td>
             </tr>
-            {{ end }}
         </table>
     </div>
 </div>
-
-{{% end %}}
