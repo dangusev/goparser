@@ -74,27 +74,16 @@ func (q Query) MarshalJSON() ([]byte, error) {
 
 
 // Returns Query by ObjectIdHex
-func GetQueryById(id string) (*Query) {
+func GetQueryById(s *mgo.Session, id string) (*Query) {
     var q Query
-    session, err := mgo.Dial("localhost:27017")
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer session.Close()
-    queries := session.DB("goparser").C("queries")
-
+    queries := s.DB("goparser").C("queries")
     queries.FindId(bson.ObjectIdHex(id)).One(&q)
     return &q
 }
 
-func GetOrderedQueryItems(id string) []Item {
+func GetOrderedQueryItems(s *mgo.Session, id string) []Item {
     var q Query
-    session, err := mgo.Dial("localhost:27017")
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer session.Close()
-    queries := session.DB("goparser").C("queries")
+    queries := s.DB("goparser").C("queries")
 
     pipe := queries.Pipe([]bson.M{
         {"$match": bson.M{"_id": bson.ObjectIdHex(id)}},

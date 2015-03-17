@@ -6,45 +6,67 @@ import (
     "log"
     "path/filepath"
     "os"
+    "github.com/gorilla/mux"
+    "gopkg.in/mgo.v2"
+    "io/ioutil"
 )
 
 type Context map[string]interface{}
 
-type globalContext struct {
-    templates map[string]*template.Template
+type GlobalContext struct {
+    Templates map[string]*template.Template
+    Router *mux.Router
+    Settings
+
+    masterSession *mgo.Session
 }
 
-type extendedHandler struct {
-    *globalContext
-    h func(*globalContext, http.ResponseWriter, *http.Request)
+type Settings struct {
+    ProjectDir string "/home/dan/go/src/github.com/dangusev/goparser/"
+    StaticDir string `json:"static_dir"`
+    TemplateDir string `json:"template_dir"`
+    TemplateAjaxDir string `json:"template_ajax_dir"`
+    TemplateBase string `json:"template_base"`
+    EmailLogin string `json:"email_login"`
+    EmailPassword string `json:"email_password"`
+    ParserRunEveryHours int64 `json:"parser_run_every_hours"`
 }
 
-
-
-// Our appHandler type will now satisify http.Handler
-func (eh extendedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-    eh.h(eh.globalContext, w, r)
-    log.Println(r.Method, r.URL)
-}
-
-
-func renderJson (w http.ResponseWriter, c Context) {
-    jsonEncoded, err := json.Marshal(c)
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
+// Returns Clone of original session (masterSession)
+func (g *GlobalContext) GetDBSession() *mgo.Session {
+    if g.masterSession == nil {
+        s, err := mgo.Dial("localhost:27017")
+        if err != nil {
+            log.Fatal(err)
+        }
+        g.masterSession = s
     }
-    w.Header().Set("Content-Type", "application/json")
-    w.Write(jsonEncoded)
+    return g.masterSession.Clone()
 }
 
-func prepareTemplates(*globalContext) map[string]*template.Template{
+// Parse settings.json and save it in .Settings
+func (g *GlobalContext) prepareSettings() {
+    var data []byte
+    var settings Settings
+    data, err := ioutil.ReadFile(filepath.Join(settings.ProjectDir, "settings.json"))
+
+    if err != nil {
+        log.Fatal(err)
+    }
+    err = json.Unmarshal(data, &settings)
+    if err != nil {
+        log.Fatal(err)
+    }
+    g.Settings = settings
+
+}
+
+func (g *GlobalContext) prepareTemplates() {
     // custom template delimiters since the Go default delimiters clash
     // with Angular's default.
     templates := make(map[string]*template.Template)
     templateDelims := []string{"{{%", "%}}"}
-    basePath := "templates"
-    baseTemplate := "base.html"
+    basePath := filepath.Join(g.Settings.ProjectDir, g.Settings.TemplateDir)
     // initialize the templates,
     // couldn't have used http://golang.org/pkg/html/template/#ParseGlob
     // since we have custom delimiters.
@@ -58,16 +80,16 @@ func prepareTemplates(*globalContext) map[string]*template.Template{
         }
         templateName := path[len(basePath)+1:]
 
-        if templateName == baseTemplate {
+        if templateName == g.Settings.TemplateBase {
             return nil
         }
         dirName, _ := filepath.Split(templateName)
-        t := template.New(baseTemplate)
+        t := template.New(g.Settings.TemplateBase)
         t.Delims(templateDelims[0], templateDelims[1])
         if dirName == "ajax/"{
             templates[templateName] = template.Must(t.ParseFiles(path))
         } else {
-            templates[templateName] = template.Must(t.ParseFiles(filepath.Join(basePath, baseTemplate), path))
+            templates[templateName] = template.Must(t.ParseFiles(filepath.Join(basePath, g.Settings.TemplateBase), path))
         }
 
         log.Printf("Processed template %s\n", templateName)
@@ -76,5 +98,29 @@ func prepareTemplates(*globalContext) map[string]*template.Template{
     if err != nil {
         log.Fatal(err)
     }
-    return templates
+    g.Templates = templates
+}
+
+type extendedHandler struct {
+    *GlobalContext
+    h func(*GlobalContext, http.ResponseWriter, *http.Request)
+}
+
+
+
+// Our appHandler type will now satisify http.Handler
+func (eh extendedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    eh.h(eh.GlobalContext, w, r)
+    log.Println(r.Method, r.URL)
+}
+
+
+func renderJson (w http.ResponseWriter, c Context) {
+    jsonEncoded, err := json.Marshal(c)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    w.Write(jsonEncoded)
 }

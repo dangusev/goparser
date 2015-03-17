@@ -1,0 +1,9 @@
+{
+  "static_dir": "static",
+  "parser_run_every_hours": 8,
+  "template_dir": "templates",
+  "template_ajax_dir": "ajax",
+  "template_base": "base.html",
+  "email_login": "dangusev92@gmail.com",
+  "email_password": "K8qetuQunuRuspb"
+}

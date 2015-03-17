@@ -22,11 +22,13 @@ func main() {
     fs := http.FileServer(http.Dir("static"))
     http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-    c := &globalContext{}
-    c.templates = prepareTemplates(c)
+    c := &GlobalContext{}
+    c.prepareSettings()
+    c.prepareTemplates()
 
     // Routes
     r := mux.NewRouter()
+    c.Router = r
     r.Handle("/", extendedHandler{c, mainHandler}).Name("main")
     r.Handle("/templates/", extendedHandler{c, templatesAjaxHandler}).Name("templates")
 
