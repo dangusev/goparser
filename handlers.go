@@ -35,6 +35,27 @@ func QueriesListHandler(c *GlobalContext, w http.ResponseWriter, r *http.Request
     renderJson(w, Context{"queries": results})
 }
 
+
+func QueriesAddHandler (c *GlobalContext, w http.ResponseWriter, r *http.Request) {
+
+    var results []parser.Query
+    var responseContext Context
+
+    session := c.GetDBSession()
+    formData := ParseJsonRequest(r)
+
+    defer session.Close()
+    queries := session.DB("goparser").C("queries")
+
+    queries.Find(bson.M{"url": formData["URL"]}).All(&results)
+    if len(results) > 0 {
+        responseContext.WriteError("URL", "Query with such URL already exists!")
+        w.WriteHeader(400)
+        renderJson(w, responseContext)
+    }
+    renderJson(w, responseContext)
+}
+
 func ItemsListHandler(c *GlobalContext, w http.ResponseWriter, r *http.Request){
     s := c.GetDBSession()
     defer s.Close()

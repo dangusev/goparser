@@ -9,9 +9,21 @@ import (
     "github.com/gorilla/mux"
     "gopkg.in/mgo.v2"
     "io/ioutil"
+    "fmt"
 )
 
 type Context map[string]interface{}
+
+func (c Context) WriteError(field, message string){
+    if _, ok := c["errors"]; !ok{
+        c["errors"] = make(map[string]interface{})
+    }
+    if _, ok := c["errors"][field]; !ok {
+        c["errors"][field] = []string{message}
+    } else {
+        c["errors"] = append(c["errors"], message)
+    }
+}
 
 type GlobalContext struct {
     Templates map[string]*template.Template
@@ -103,18 +115,35 @@ func (g *GlobalContext) prepareTemplates() {
 
 type extendedHandler struct {
     *GlobalContext
-    h func(*GlobalContext, http.ResponseWriter, *http.Request)
+    GetHandler func(*GlobalContext, http.ResponseWriter, *http.Request)
+    PostHandler func(*GlobalContext, http.ResponseWriter, *http.Request)
 }
-
 
 
 // Our appHandler type will now satisify http.Handler
 func (eh extendedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-    eh.h(eh.GlobalContext, w, r)
-    log.Println(r.Method, r.URL)
+    if r.Method == "GET" {
+        eh.GetHandler(eh.GlobalContext, w, r)
+        log.Println(r.Method, r.URL)
+    } else if r.Method == "POST"{
+
+        eh.PostHandler(eh.GlobalContext, w, r)
+        log.Println(r.Method, r.URL)
+    } else {
+        log.Println(r.URL, fmt.Sprintf("Unsupported method: %s", r.Method))
+    }
+
 }
 
-
+func ParseJsonRequest(r *http.Request) map[string]interface{}{
+    parsedData := make(map[string]interface{})
+    decoder := json.NewDecoder(r.Body)
+    err := decoder.Decode(&parsedData)
+    if err != nil {
+        log.Fatal(err)
+    }
+    return parsedData
+}
 func renderJson (w http.ResponseWriter, c Context) {
     jsonEncoded, err := json.Marshal(c)
     if err != nil {

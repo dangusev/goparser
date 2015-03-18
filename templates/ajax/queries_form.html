@@ -1,0 +1,9 @@
+<div ng-controller="QueriesAddController">
+    <form class="form-inline top-buffer" ng-submit="Query.SubmitQuery()">
+        <div class="form-group">
+            <input class="form-control" type="text" required ng-model="Query.Title">
+            <input class="form-control" type="url" required ng-model="Query.URL">
+            <button type="submit" class="btn btn-default">Add</button>
+        </div>
+    </form>
+</div>

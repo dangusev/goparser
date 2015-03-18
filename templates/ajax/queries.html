@@ -1,4 +1,6 @@
 <div class="col-md-12">
+    <a ui-sref="queries.add">Add query</a>
+    <div ui-view="queries_add_view"></div>
     <table class="table">
         <tr ng-repeat="q in Queries">
             <td ng-if="q.Title">{{ q.Title }}</td>
