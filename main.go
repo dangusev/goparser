@@ -29,11 +29,11 @@ func main() {
     // Routes
     r := mux.NewRouter()
     c.Router = r
-    r.Handle("/", extendedHandler{GlobalContext: c, GetHandler: mainHandler}).Name("main")
-    r.Handle("/templates/", extendedHandler{GlobalContext: c, GetHandler: templatesAjaxHandler}).Name("templates")
+    r.Handle("/", extendedHandler{GlobalContext: c, Get: mainHandler}).Name("main")
+    r.Handle("/templates/", extendedHandler{GlobalContext: c, Get: templatesAjaxHandler}).Name("templates")
 
-    r.Handle("/api/queries/", extendedHandler{GlobalContext: c, GetHandler: QueriesListHandler, PostHandler: QueriesAddHandler}).Name("queries-list")
-    r.Handle("/api/queries/{id}/items/", extendedHandler{GlobalContext: c, GetHandler: ItemsListHandler}).Name("items-list")
+    r.Handle("/api/queries/", extendedHandler{GlobalContext: c, Get: QueriesListHandler, Post: QueriesAddHandler}).Name("queries-list")
+    r.Handle("/api/queries/{id}/items/", extendedHandler{GlobalContext: c, Get: ItemsListHandler}).Name("items-list")
 
     http.Handle("/", r)
     log.Println("Run goparser on localhost:8080")

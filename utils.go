@@ -14,15 +14,19 @@ import (
 
 type Context map[string]interface{}
 
-func (c Context) WriteError(field, message string){
-    if _, ok := c["errors"]; !ok{
-        c["errors"] = make(map[string]interface{})
-    }
-    if _, ok := c["errors"][field]; !ok {
-        c["errors"][field] = []string{message}
+func WriteError(c Context, field, message string){
+    errors := make(map[string][]string)
+
+    fieldErrors, ok := errors[field]
+    if !ok {
+        fieldErrors = []string{message}
     } else {
-        c["errors"] = append(c["errors"], message)
+        fieldErrors = append(fieldErrors, message)
     }
+    errors[field] = fieldErrors
+    fmt.Println(fieldErrors, "field")
+    fmt.Println(errors, "errors")
+    c["errors"] = errors
 }
 
 type GlobalContext struct {
@@ -115,19 +119,19 @@ func (g *GlobalContext) prepareTemplates() {
 
 type extendedHandler struct {
     *GlobalContext
-    GetHandler func(*GlobalContext, http.ResponseWriter, *http.Request)
-    PostHandler func(*GlobalContext, http.ResponseWriter, *http.Request)
+    Get func(*GlobalContext, http.ResponseWriter, *http.Request)
+    Post func(*GlobalContext, http.ResponseWriter, *http.Request)
 }
 
 
 // Our appHandler type will now satisify http.Handler
 func (eh extendedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     if r.Method == "GET" {
-        eh.GetHandler(eh.GlobalContext, w, r)
+        eh.Get(eh.GlobalContext, w, r)
         log.Println(r.Method, r.URL)
     } else if r.Method == "POST"{
 
-        eh.PostHandler(eh.GlobalContext, w, r)
+        eh.Post(eh.GlobalContext, w, r)
         log.Println(r.Method, r.URL)
     } else {
         log.Println(r.URL, fmt.Sprintf("Unsupported method: %s", r.Method))
