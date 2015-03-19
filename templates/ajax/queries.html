@@ -4,7 +4,7 @@
     <table class="table">
         <tr ng-repeat="q in Queries">
             <td ng-if="q.Title">{{ q.Title }}</td>
-            <td ng-if="!q.Title">Noname query</td>
+            <td ng-if="!q.Title">Noname</td>
 
             <td><a ui-sref="items({queryId: q.ID})">Результаты выдачи</a></td>
             <td><a target="_blank" href="{{ q.URL }}">Перейти по запросу <span class="glyphicon glyphicon-share-alt"></span></a></td>

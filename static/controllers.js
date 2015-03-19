@@ -17,6 +17,13 @@ app.config(function ($stateProvider, $urlRouterProvider) {
             },
             controller: "QueriesAddController"
         })
+        .state("queries.detail", {
+            url: "queries/{queryId}/",
+            views: {
+                "queries_add_view": {templateUrl : "/templates/?tname=ajax/queries_form.html"}
+            },
+            controller: "QueriesAddController"
+        })
         .state("items", {
             url: "/queries/{queryId}/items/",
             templateUrl: "/templates/?tname=ajax/items.html",
@@ -30,11 +37,11 @@ app.controller('QueriesController', ['$scope', '$http', function($scope,$http) {
         $scope.Queries = response.queries;
     });
 }])
-    .controller('QueriesAddController', ['$scope', '$http', function($scope,$http) {
+    .controller('QueriesAddController', ['$scope', '$http', '$state', function($scope,$http, $state) {
         $scope.Query = {};
         $scope.Query.SubmitQuery = function (item, event) {
             $http.post(url="/api/queries/", data=$scope.Query).success(function (response) {
-                    console.log(response)
+                    $state.go('queries.list',null, {reload: true});
                 });
         };
 }])

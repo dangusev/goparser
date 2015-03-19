@@ -33,6 +33,7 @@ func main() {
     r.Handle("/templates/", extendedHandler{GlobalContext: c, Get: templatesAjaxHandler}).Name("templates")
 
     r.Handle("/api/queries/", extendedHandler{GlobalContext: c, Get: QueriesListHandler, Post: QueriesAddHandler}).Name("queries-list")
+    r.Handle("/api/queries/{id}/", extendedHandler{GlobalContext: c, Post: QueriesUpdateHandler}).Name("queries-detail")
     r.Handle("/api/queries/{id}/items/", extendedHandler{GlobalContext: c, Get: ItemsListHandler}).Name("items-list")
 
     http.Handle("/", r)
