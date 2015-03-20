@@ -121,6 +121,7 @@ type extendedHandler struct {
     *GlobalContext
     Get func(*GlobalContext, http.ResponseWriter, *http.Request)
     Post func(*GlobalContext, http.ResponseWriter, *http.Request)
+    Delete func(*GlobalContext, http.ResponseWriter, *http.Request)
 }
 
 
@@ -129,9 +130,11 @@ func (eh extendedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     if r.Method == "GET" {
         eh.Get(eh.GlobalContext, w, r)
         log.Println(r.Method, r.URL)
-    } else if r.Method == "POST"{
-
+    } else if r.Method == "POST" {
         eh.Post(eh.GlobalContext, w, r)
+        log.Println(r.Method, r.URL)
+    } else if r.Method == "DELETE" {
+        eh.Delete(eh.GlobalContext, w, r)
         log.Println(r.Method, r.URL)
     } else {
         log.Println(r.URL, fmt.Sprintf("Unsupported method: %s", r.Method))

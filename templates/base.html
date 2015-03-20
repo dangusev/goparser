@@ -5,6 +5,8 @@
     <title>Goparser</title>
     <script src="/static/angular.min.js"></script>
     <script src="/static/angular-ui-router.min.js"></script>
+    <script src="/static/ui-bootstrap.min.js"></script>
+    <script src="/static/ui-bootstrap-tpls.min.js"></script>
     <link rel="stylesheet" href="/static/bootstrap-3.3.2/css/bootstrap.min.css">
     <style>
         .top-buffer {
@@ -14,7 +16,7 @@
 </head>
 <body>
 <div class="container">
-    <h1>Goparser</h1>
+    <h1><a ui-sref="queries">Goparser</a></h1>
     <div ui-view class="row">
         {{% template "content" . %}}
     </div>

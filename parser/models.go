@@ -23,6 +23,10 @@ func (q *Query) GetItemsUrl() (u string) {
     return fmt.Sprintf("/queries/%s/items", q.ID.Hex())
 }
 
+func (q *Query) GetQueryUrl() (u string) {
+    return fmt.Sprintf("/queries/%s/", q.ID.Hex())
+}
+
 // Update Query instance in Mongodb
 func (q *Query) Update(session *mgo.Session) {
 	defer session.Close()
@@ -62,6 +66,7 @@ func (q Query) MarshalJSON() ([]byte, error) {
         Items []Item        `bson:"items"`
         LastParsedAt time.Time `bson:"last_parsed_at"`
         ItemsURL string
+        QueryURL string
     }{
         q.ID,
         q.Title,
@@ -69,6 +74,7 @@ func (q Query) MarshalJSON() ([]byte, error) {
         q.Items,
         q.LastParsedAt,
         q.GetItemsUrl(),
+        q.GetQueryUrl(),
     })
 }
 

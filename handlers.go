@@ -56,8 +56,14 @@ func QueriesAddHandler (c *GlobalContext, w http.ResponseWriter, r *http.Request
     }
 }
 
+func QueriesDetailHandler(c *GlobalContext, w http.ResponseWriter, r *http.Request){
+    s := c.GetDBSession()
+    defer s.Close()
+    q := parser.GetQueryById(s, mux.Vars(r)["id"])
+    renderJson(w, Context{"query": q})
+}
+
 func QueriesUpdateHandler(c *GlobalContext, w http.ResponseWriter, r *http.Request) {
-    responseContext := make(Context)
     session := c.GetDBSession()
     defer session.Close()
     formData := ParseJsonRequest(r)
@@ -68,7 +74,16 @@ func QueriesUpdateHandler(c *GlobalContext, w http.ResponseWriter, r *http.Reque
         bson.M{"url": formData["URL"], "title": formData["Title"]},
     )
     w.WriteHeader(200)
-    renderJson(w, responseContext)
+    renderJson(w, Context{})
+}
+
+func QueriesDeleteHandler(c *GlobalContext, w http.ResponseWriter, r *http.Request) {
+    session := c.GetDBSession()
+    defer session.Close()
+    queries := session.DB("goparser").C("queries")
+    queries.RemoveId(bson.ObjectIdHex(mux.Vars(r)["id"]))
+    w.WriteHeader(204)
+    renderJson(w, Context{})
 }
 
 func ItemsListHandler(c *GlobalContext, w http.ResponseWriter, r *http.Request){
