@@ -18,13 +18,14 @@ func main() {
         c.AddFunc("@every 8h", parser.RunParser)
         c.AddFunc("@every 8h", parser.SendNotifications)
     }
-    // Serve static
-    fs := http.FileServer(http.Dir("static"))
-    http.Handle("/static/", http.StripPrefix("/static/", fs))
 
     c := &GlobalContext{}
     c.prepareSettings()
     c.prepareTemplates()
+
+    // Serve static
+    fs := http.FileServer(http.Dir(c.StaticDir))
+    http.Handle("/static/", http.StripPrefix("/static/", fs))
 
     // Routes
     r := mux.NewRouter()
@@ -43,3 +44,8 @@ func main() {
         log.Fatal(err)
     }
 }
+
+//TODO:
+// Deploy to Digital Ocean
+// Think of making Model-based handlers
+// Wonder about design
