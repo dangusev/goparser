@@ -11,13 +11,13 @@ import (
     "sync"
 
     "github.com/moovweb/gokogiri"
-    "gopkg.in/mgo.v2"
     "gopkg.in/mgo.v2/bson"
     "fmt"
     "regexp"
     "text/template"
     "bytes"
     "net/smtp"
+    "github.com/dangusev/goparser/utils"
 )
 
 const MIME = "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
@@ -86,15 +86,12 @@ func getPagesCount(pageURL string) (count int64) {
     return
 }
 
-func RunParser() {
+func RunParser(c *utils.GlobalContext) {
     var results []Query
     log.Println("Started parsing...")
-    session, err := mgo.Dial("localhost:27017")
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer session.Close()
-    queries := session.DB("goparser").C("queries")
+    s := c.GetDBSession()
+    defer s.Close()
+    queries := s.DB("goparser").C("queries")
 
     queries.Find(bson.M{}).Select(bson.M{"url": 1}).All(&results)
 
@@ -137,20 +134,19 @@ func RunParser() {
         for _, item := range query.Items {
             item.Is_new = !query.ItemsContains(item)
         }
-        query.Update(session.Clone())
+        query.Update(s.Clone())
         log.Println(fmt.Sprintf("Parsing of query %s finished", query.URL))
     }
     log.Println("Parsing finished")
 }
 
-func SendNotifications(){
-    auth := smtp.PlainAuth("", "dangusev92@gmail.com", "K8qetuQunuRuspb", "smtp.gmail.com")
-    to := []string{"dangusev92@gmail.com"}
+func SendNotifications(c *utils.GlobalContext){
+    auth := smtp.PlainAuth("", c.EmailLogin, c.EmailPassword, "smtp.gmail.com")
+    to := []string{c.EmailLogin}
     context := make(map[string]interface{})
     queries := make([]Query, 0, 0)
-
-    updatedQueries := GetQueriesWithNewItems()
-    if len(updatedQueries) > 0{
+    updatedQueries := GetQueriesWithNewItems(c.GetDBSession())
+    if len(updatedQueries) > 0 {
         t := template.Must(template.ParseFiles("templates/email_message.html"))
         for _, q := range updatedQueries {
             queries = append(queries, q)

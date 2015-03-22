@@ -1,4 +1,4 @@
-package main
+package utils
 import (
     "net/http"
     "encoding/json"
@@ -13,21 +13,6 @@ import (
 )
 
 type Context map[string]interface{}
-
-func WriteError(c Context, field, message string){
-    errors := make(map[string][]string)
-
-    fieldErrors, ok := errors[field]
-    if !ok {
-        fieldErrors = []string{message}
-    } else {
-        fieldErrors = append(fieldErrors, message)
-    }
-    errors[field] = fieldErrors
-    fmt.Println(fieldErrors, "field")
-    fmt.Println(errors, "errors")
-    c["errors"] = errors
-}
 
 type GlobalContext struct {
     Templates map[string]*template.Template
@@ -61,7 +46,7 @@ func (g *GlobalContext) GetDBSession() *mgo.Session {
 }
 
 // Parse settings.json and save it in .Settings
-func (g *GlobalContext) prepareSettings() {
+func (g *GlobalContext) PrepareSettings() {
     var data []byte
     var settings Settings
     data, err := ioutil.ReadFile(filepath.Join(settings.ProjectDir, "settings.json"))
@@ -74,17 +59,16 @@ func (g *GlobalContext) prepareSettings() {
         log.Fatal(err)
     }
     g.Settings = settings
-
 }
 
-func (g *GlobalContext) prepareTemplates() {
+func (g *GlobalContext) PrepareTemplates() {
     // custom template delimiters since the Go default delimiters clash
     // with Angular's default.
     templates := make(map[string]*template.Template)
     templateDelims := []string{"{{%", "%}}"}
     basePath := filepath.Join(g.Settings.ProjectDir, g.Settings.TemplateDir)
     // initialize the templates,
-    // couldn't have used http://golang.org/pkg/html/template/#ParseGlob
+    // couldn't /home/dan/go/src/github.com/dangusev/goparserhave used http://golang.org/pkg/html/template/#ParseGlob
     // since we have custom delimiters.
     err := filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error {
         if err != nil {
@@ -117,7 +101,7 @@ func (g *GlobalContext) prepareTemplates() {
     g.Templates = templates
 }
 
-type extendedHandler struct {
+type ExtendedHandler struct {
     *GlobalContext
     Get func(*GlobalContext, http.ResponseWriter, *http.Request)
     Post func(*GlobalContext, http.ResponseWriter, *http.Request)
@@ -126,7 +110,7 @@ type extendedHandler struct {
 
 
 // Our appHandler type will now satisify http.Handler
-func (eh extendedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (eh ExtendedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     if r.Method == "GET" {
         eh.Get(eh.GlobalContext, w, r)
         log.Println(r.Method, r.URL)
@@ -151,7 +135,7 @@ func ParseJsonRequest(r *http.Request) map[string]interface{}{
     }
     return parsedData
 }
-func renderJson (w http.ResponseWriter, c Context) {
+func RenderJson (w http.ResponseWriter, c Context) {
     jsonEncoded, err := json.Marshal(c)
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -159,4 +143,19 @@ func renderJson (w http.ResponseWriter, c Context) {
     }
     w.Header().Set("Content-Type", "application/json")
     w.Write(jsonEncoded)
+}
+
+func WriteError(c Context, field, message string){
+    errors := make(map[string][]string)
+
+    fieldErrors, ok := errors[field]
+    if !ok {
+        fieldErrors = []string{message}
+    } else {
+        fieldErrors = append(fieldErrors, message)
+    }
+    errors[field] = fieldErrors
+    fmt.Println(fieldErrors, "field")
+    fmt.Println(errors, "errors")
+    c["errors"] = errors
 }

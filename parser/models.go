@@ -94,21 +94,17 @@ func GetOrderedQueryItems(s *mgo.Session, id string) []Item {
     pipe := queries.Pipe([]bson.M{
         {"$match": bson.M{"_id": bson.ObjectIdHex(id)}},
         {"$unwind": "$items"},
-        {"$sort": bson.M{"items.is_new": 1, "items.price": 1}},
+        {"$sort": bson.M{"items.is_new": -1, "items.price": 1}},
         {"$group": bson.M{"_id":"$_id", "items": bson.M{"$push": "$items"}}},
     })
     pipe.One(&q)
     return q.Items
 }
 
-func GetQueriesWithNewItems() []Query {
+func GetQueriesWithNewItems(s *mgo.Session) []Query {
     var result []Query
-    session, err := mgo.Dial("localhost:27017")
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer session.Close()
-    queries := session.DB("goparser").C("queries")
+    defer s.Close()
+    queries := s.DB("goparser").C("queries")
     queries.Find(bson.M{"items": bson.M{"$elemMatch": bson.M{"is_new": true}}}).All(&result)
     return result
 }

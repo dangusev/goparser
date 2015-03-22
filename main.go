@@ -7,21 +7,22 @@ import (
     "github.com/dangusev/goparser/parser"
     "github.com/robfig/cron"
     "os"
+    "github.com/dangusev/goparser/utils"
 )
 
 
 func main() {
+    c := &utils.GlobalContext{}
+    c.PrepareSettings()
+    c.PrepareTemplates()
+
     args := os.Args[1:]
     if len(args) > 0 && args[0] == "with_parser" {
         // Run parser by cron
-        c := cron.New()
-        c.AddFunc("@every 8h", parser.RunParser)
-        c.AddFunc("@every 8h", parser.SendNotifications)
+        cr := cron.New()
+        cr.AddFunc("@every 8h", func() {parser.RunParser(c)})
+        cr.AddFunc("@every 8h", func() {parser.SendNotifications(c)})
     }
-
-    c := &GlobalContext{}
-    c.prepareSettings()
-    c.prepareTemplates()
 
     // Serve static
     fs := http.FileServer(http.Dir(c.StaticDir))
@@ -30,12 +31,12 @@ func main() {
     // Routes
     r := mux.NewRouter()
     c.Router = r
-    r.Handle("/", extendedHandler{GlobalContext: c, Get: mainHandler}).Name("main")
-    r.Handle("/templates/", extendedHandler{GlobalContext: c, Get: templatesAjaxHandler}).Name("templates")
+    r.Handle("/", utils.ExtendedHandler{GlobalContext: c, Get: mainHandler}).Name("main")
+    r.Handle("/templates/", utils.ExtendedHandler{GlobalContext: c, Get: templatesAjaxHandler}).Name("templates")
 
-    r.Handle("/api/queries/", extendedHandler{GlobalContext: c, Get: QueriesListHandler, Post: QueriesAddHandler}).Name("queries-list")
-    r.Handle("/api/queries/{id}/", extendedHandler{GlobalContext: c, Get:QueriesDetailHandler, Post: QueriesUpdateHandler, Delete: QueriesDeleteHandler}).Name("queries-detail")
-    r.Handle("/api/queries/{id}/items/", extendedHandler{GlobalContext: c, Get: ItemsListHandler}).Name("items-list")
+    r.Handle("/api/queries/", utils.ExtendedHandler{GlobalContext: c, Get: QueriesListHandler, Post: QueriesAddHandler}).Name("queries-list")
+    r.Handle("/api/queries/{id}/", utils.ExtendedHandler{GlobalContext: c, Get:QueriesDetailHandler, Post: QueriesUpdateHandler, Delete: QueriesDeleteHandler}).Name("queries-detail")
+    r.Handle("/api/queries/{id}/items/", utils.ExtendedHandler{GlobalContext: c, Get: ItemsListHandler}).Name("items-list")
 
     http.Handle("/", r)
     log.Println("Run goparser on localhost:8080")
