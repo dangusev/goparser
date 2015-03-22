@@ -26,4 +26,3 @@ _testmain.go
 .vendor/
 bower_components
 settings.json
-Dockerfile
