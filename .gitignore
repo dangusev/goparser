@@ -24,5 +24,6 @@ _testmain.go
 *.prof
 .idea/
 .vendor/
+*.iml
 bower_components
 settings.json
